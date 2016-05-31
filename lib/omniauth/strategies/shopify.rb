@@ -22,16 +22,11 @@ module OmniAuth
       # mismatch the requested scopes.
       option :validate_granted_scopes, true
 
-      option :setup, proc { |env|
-        request = Rack::Request.new(env)
-        env['omniauth.strategy'].options[:client_options][:site] = "https://#{request.params['shop']}"
-      }
-
-      uid { URI.parse(options[:client_options][:site]).host }
-
-      def valid_site?
-        !!(/\A(https|http)\:\/\/[a-zA-Z0-9][a-zA-Z0-9\-]*\.#{Regexp.quote(options[:myshopify_domain])}[\/]?\z/ =~ options[:client_options][:site])
+      def shop
+        request.params['shop']
       end
+
+      uid { shop.gsub('.myshopify.com','') }
 
       def valid_signature?
         return false unless request.POST.empty?
@@ -71,25 +66,12 @@ module OmniAuth
         OpenSSL::HMAC.hexdigest(OpenSSL::Digest::SHA256.new, secret, encoded_params)
       end
 
-      def fix_https
-        options[:client_options][:site].gsub!(/\Ahttp\:/, 'https:')
-      end
-
-      def setup_phase
-        super
-        fix_https
-      end
-
       def request_phase
-        if valid_site?
-          super
-        else
-          fail!(:invalid_site)
-        end
+        env['omniauth.strategy'].options[:client_options][:site] = "https://#{shop}"
+        super
       end
 
       def callback_phase
-        return fail!(:invalid_site, CallbackError.new(:invalid_site, "OAuth endpoint is not a myshopify site.")) unless valid_site?
         return fail!(:invalid_signature, CallbackError.new(:invalid_signature, "Signature does not match, it may have been tampered with.")) unless valid_signature?
 
         token = build_access_token
