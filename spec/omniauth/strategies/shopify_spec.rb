@@ -4,15 +4,15 @@ describe OmniAuth::Strategies::Shopify do
   before :each do
     @request = double('Request',
                       :env => { })
-    @request.stub(:params) { {} }
+    @request.stub(:params) do
+      {shop: 'https://example.myshopify.com'}
+    end
     @request.stub(:cookies) { {} }
 
     @client_id = '123'
     @client_secret = '53cr3tz'
 
     @options = {}
-
-    allow(subject.request).to receive(:params) { {shop: 'https://example.myshopify.com'} }
   end
 
   subject do
@@ -35,7 +35,7 @@ describe OmniAuth::Strategies::Shopify do
 
   describe '#callback_url' do
     it "defaults to callback" do
-      url_base = 'http://auth.request.com'
+      url_base = 'https://auth.request.com'
       @request.stub(:url) { "#{url_base}/page/path" }
       @request.stub(:scheme) { 'http' }
       subject.stub(:script_name) { "" } # to not depend from Rack env
