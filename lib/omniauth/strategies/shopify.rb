@@ -5,7 +5,7 @@ module OmniAuth
     class Shopify < OmniAuth::Strategies::OAuth2
       # Available scopes: content themes products customers orders script_tags shipping
       # read_*  or write_*
-      DEFAULT_SCOPE = 'write_products,write_orders'
+      DEFAULT_SCOPE = 'read_products'
       SCOPE_DELIMITER = ','
       MINUTE = 60
       CODE_EXPIRES_AFTER = 10 * MINUTE
@@ -97,7 +97,8 @@ module OmniAuth
       end
 
       def callback_url
-        options[:callback_url] || full_host + script_name + callback_path
+        (options[:callback_url] || full_host + script_name + callback_path)
+          .gsub('http://', 'https://') # force https
       end
     end
   end
