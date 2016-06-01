@@ -3,10 +3,6 @@ require 'omniauth/strategies/oauth2'
 module OmniAuth
   module Strategies
     class Shopify < OmniAuth::Strategies::OAuth2
-      # Available scopes: content themes products customers orders script_tags shipping
-      # read_*  or write_*
-      DEFAULT_SCOPE = 'read_products'
-      SCOPE_DELIMITER = ','
       MINUTE = 60
       CODE_EXPIRES_AFTER = 10 * MINUTE
 
@@ -18,10 +14,6 @@ module OmniAuth
       option :callback_url
       option :myshopify_domain, 'myshopify.com'
 
-      # When `true`, the authorization phase will fail if the granted scopes
-      # mismatch the requested scopes.
-      option :validate_granted_scopes, true
-
       def shop
         request.params['shop'] || request.params[:shop]
       end
@@ -30,33 +22,6 @@ module OmniAuth
         shop
           .gsub(/https?:\/\//, '') # remove http:// or https://
           .gsub(/\..*/, '') # remove .myshopify.com
-      end
-
-      def valid_signature?
-        return false unless request.POST.empty?
-
-        params = request.GET
-        signature = params['hmac']
-        timestamp = params['timestamp']
-        return false unless signature && timestamp
-
-        return false unless timestamp.to_i > Time.now.to_i - CODE_EXPIRES_AFTER
-
-        calculated_signature = self.class.hmac_sign(self.class.encoded_params_for_signature(params), options.client_secret)
-        Rack::Utils.secure_compare(calculated_signature, signature)
-      end
-
-      def valid_scope?(token)
-        params = options.authorize_params.merge(options_for("authorize"))
-        return false unless token && params[:scope] && token['scope']
-        expected_scope = normalized_scopes(params[:scope]).sort
-        (expected_scope == token['scope'].split(SCOPE_DELIMITER).sort)
-      end
-
-      def normalized_scopes(scopes)
-        scope_list = scopes.to_s.split(SCOPE_DELIMITER).map(&:strip).reject(&:empty?).uniq
-        ignore_scopes = scope_list.map { |scope| scope =~ /\Awrite_(.*)\z/ && "read_#{$1}" }.compact
-        scope_list - ignore_scopes
       end
 
       def self.encoded_params_for_signature(params)
@@ -70,30 +35,9 @@ module OmniAuth
         OpenSSL::HMAC.hexdigest(OpenSSL::Digest::SHA256.new, secret, encoded_params)
       end
 
-      def request_phase
+      def setup_phase
         env['omniauth.strategy'].options[:client_options][:site] = "https://#{uid}.myshopify.com"
         super
-      end
-
-      def callback_phase
-        return fail!(:invalid_signature, CallbackError.new(:invalid_signature, "Signature does not match, it may have been tampered with.")) unless valid_signature?
-
-        token = build_access_token
-        unless valid_scope?(token)
-          return fail!(:invalid_scope, CallbackError.new(:invalid_scope, "Scope does not match, it may have been tampered with."))
-        end
-
-        super
-      end
-
-      def build_access_token
-        @built_access_token ||= super
-      end
-
-      def authorize_params
-        super.tap do |params|
-          params[:scope] = normalized_scopes(params[:scope] || DEFAULT_SCOPE).join(SCOPE_DELIMITER)
-        end
       end
 
       def callback_url

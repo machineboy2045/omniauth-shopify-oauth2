@@ -44,7 +44,8 @@ describe OmniAuth::Strategies::Shopify do
   end
 
   describe '#authorize_params' do
-    it 'includes default scope' do
+    it 'includes scope options' do
+      @options = {scope: 'read_products'}
       expect(subject.authorize_params).to be_a(Hash)
       expect(subject.authorize_params[:scope]).to eq('read_products')
     end
