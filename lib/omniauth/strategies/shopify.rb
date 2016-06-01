@@ -5,7 +5,7 @@ module OmniAuth
     class Shopify < OmniAuth::Strategies::OAuth2
       # Available scopes: content themes products customers orders script_tags shipping
       # read_*  or write_*
-      DEFAULT_SCOPE = 'read_products'
+      DEFAULT_SCOPE = 'write_products,write_orders'
       SCOPE_DELIMITER = ','
       MINUTE = 60
       CODE_EXPIRES_AFTER = 10 * MINUTE
@@ -23,10 +23,14 @@ module OmniAuth
       option :validate_granted_scopes, true
 
       def shop
-        request.params['shop']
+        request.params['shop'] || request.params[:shop]
       end
 
-      uid { shop.gsub(/https?:\/\//, '').gsub(/\..*/, '') }
+      uid do
+        shop
+          .gsub(/https?:\/\//, '') # remove http:// or https://
+          .gsub(/\..*/, '') # remove .myshopify.com
+      end
 
       def valid_signature?
         return false unless request.POST.empty?
@@ -93,7 +97,7 @@ module OmniAuth
       end
 
       def callback_url
-        options[:callback_url] || request.base_url + request.path + '/callback'
+        options[:callback_url] || full_host + script_name + callback_path
       end
     end
   end
