@@ -97,8 +97,8 @@ module OmniAuth
       end
 
       def callback_url
-        url = options[:callback_url] || full_host + script_name + callback_path
-        url.gsub('http://', 'https://') # force https
+        (options[:callback_url] || full_host + script_name + callback_path)
+          .gsub('http://', 'https://') # force https
       end
     end
   end
