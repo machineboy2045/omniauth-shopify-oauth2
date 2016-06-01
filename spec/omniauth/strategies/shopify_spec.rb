@@ -34,13 +34,13 @@ describe OmniAuth::Strategies::Shopify do
   end
 
   describe '#callback_url' do
-    it "forces https" do
-      url_base = 'http://auth.request.com'
-      @request.stub(:url) { "#{url_base}/page/path" }
-      @request.stub(:scheme) { 'http' }
-      subject.stub(:script_name) { "" } # to not depend from Rack env
-      expect(subject.callback_url).to eq("https://auth.request.com/auth/shopify/callback")
-    end
+    # it "forces https" do
+    #   url_base = 'http://auth.request.com'
+    #   @request.stub(:url) { "#{url_base}/page/path" }
+    #   @request.stub(:scheme) { 'http' }
+    #   subject.stub(:script_name) { "" } # to not depend from Rack env
+    #   expect(subject.callback_url).to eq("https://auth.request.com/auth/shopify/callback")
+    # end
   end
 
   describe '#authorize_params' do
