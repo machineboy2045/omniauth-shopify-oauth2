@@ -26,7 +26,11 @@ module OmniAuth
         request.params['shop']
       end
 
-      uid { shop.gsub('.myshopify.com','') }
+      uid do
+        shop
+          .gsub(/https?:\/\//, '') # remove http:// or https://
+          .gsub(/\..*/, '') # remove .myshopify.com
+      end
 
       def valid_signature?
         return false unless request.POST.empty?
@@ -67,7 +71,7 @@ module OmniAuth
       end
 
       def request_phase
-        env['omniauth.strategy'].options[:client_options][:site] = "https://#{shop}"
+        env['omniauth.strategy'].options[:client_options][:site] = "https://#{uid}.myshopify.com"
         super
       end
 
