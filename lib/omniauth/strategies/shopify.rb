@@ -26,11 +26,7 @@ module OmniAuth
         request.params['shop']
       end
 
-      uid do
-        shop
-          .gsub(/https?:\/\//, '') # remove http:// or https://
-          .gsub(/\..*/, '') # remove .myshopify.com
-      end
+      uid { shop.gsub(/https?:\/\//, '').gsub(/\..*/, '') }
 
       def valid_signature?
         return false unless request.POST.empty?
